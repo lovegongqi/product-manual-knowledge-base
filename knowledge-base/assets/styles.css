@@ -100,15 +100,25 @@ h1 {
   max-width: 1500px;
 }
 
-.controls label {
+.controls > label,
+.search-field {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
-.controls span {
+.controls > label > span,
+.search-field > label {
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
 }
 
 input,
@@ -127,6 +137,20 @@ input:focus,
 select:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.clear-button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 14px;
+}
+
+.clear-button:hover {
+  border-color: var(--teal);
+  color: var(--teal);
 }
 
 .workspace {
@@ -155,7 +179,6 @@ select:focus {
   margin-bottom: 10px;
 }
 
-.pane-head button,
 .link-button {
   min-height: 34px;
   border: 1px solid var(--line);
@@ -166,7 +189,6 @@ select:focus {
   text-decoration: none;
 }
 
-.pane-head button:hover,
 .link-button:hover {
   border-color: var(--teal);
   color: var(--teal);
@@ -371,7 +393,7 @@ mark {
     grid-column: 1 / -1;
   }
 
-  .controls label:not(.search-field) {
+  .controls > label {
     display: none;
   }
 

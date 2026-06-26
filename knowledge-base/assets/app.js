@@ -25,6 +25,9 @@ const collator = new Intl.Collator("zh-Hans-CN", {
   sensitivity: "base",
 });
 
+const returnStateKey = "product-kb-return-state";
+let pendingScrollRestore = null;
+
 const state = {
   query: "",
   category: "",
@@ -181,13 +184,14 @@ function renderList(results) {
 
   els.manualList.querySelectorAll(".manual-card").forEach((button) => {
     button.addEventListener("click", () => {
-      if (isMobileLayout() && button.dataset.fileUrl) {
-        window.location.assign(button.dataset.fileUrl);
-        return;
-      }
       const selectedId = Number(button.dataset.id) || button.dataset.id;
       const manual = results.find((item) => String(item.id) === String(selectedId));
       state.selectedId = manual?.id ?? selectedId;
+      if (isMobileLayout() && button.dataset.fileUrl) {
+        saveReturnState();
+        window.location.assign(button.dataset.fileUrl);
+        return;
+      }
       state.mobileDetailOpen = isMobileLayout();
       render();
     });
@@ -293,6 +297,58 @@ function render() {
   renderList(results);
   renderDetail(results);
   syncMobileDetailState();
+  restoreScrollPosition();
+}
+
+function saveReturnState() {
+  try {
+    sessionStorage.setItem(
+      returnStateKey,
+      JSON.stringify({
+        query: state.query,
+        category: state.category,
+        series: state.series,
+        textStatus: state.textStatus,
+        selectedId: state.selectedId,
+        listScrollTop: els.manualList.scrollTop,
+        windowScrollY: window.scrollY,
+      }),
+    );
+  } catch {
+    // Returning from the PDF still works; this only improves position restore.
+  }
+}
+
+function restoreReturnState() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(returnStateKey) || "null");
+    if (!saved || typeof saved !== "object") return;
+    state.query = saved.query || "";
+    state.category = saved.category || "";
+    state.series = saved.series || "";
+    state.textStatus = saved.textStatus || "";
+    state.selectedId = saved.selectedId ?? state.selectedId;
+    els.searchInput.value = state.query;
+    els.categoryFilter.value = state.category;
+    els.seriesFilter.value = state.series;
+    els.textStatusFilter.value = state.textStatus;
+    pendingScrollRestore = {
+      listScrollTop: Number(saved.listScrollTop) || 0,
+      windowScrollY: Number(saved.windowScrollY) || 0,
+    };
+  } catch {
+    pendingScrollRestore = null;
+  }
+}
+
+function restoreScrollPosition() {
+  if (!pendingScrollRestore) return;
+  const target = pendingScrollRestore;
+  pendingScrollRestore = null;
+  requestAnimationFrame(() => {
+    els.manualList.scrollTop = target.listScrollTop;
+    window.scrollTo(0, target.windowScrollY);
+  });
 }
 
 function bindEvents() {
@@ -338,5 +394,6 @@ function bindEvents() {
 }
 
 initFilters();
+restoreReturnState();
 bindEvents();
 render();

@@ -18,15 +18,18 @@
         </div>
 
         <div class="controls" aria-label="筛选">
-          <label class="search-field">
-            <span>搜索</span>
-            <input
-              id="searchInput"
-              type="search"
-              autocomplete="off"
-              placeholder="型号、标题、正文"
-            />
-          </label>
+          <div class="search-field">
+            <label for="searchInput">搜索</label>
+            <div class="search-row">
+              <input
+                id="searchInput"
+                type="search"
+                autocomplete="off"
+                placeholder="型号、标题、正文"
+              />
+              <button id="clearFilters" class="clear-button" type="button">清空</button>
+            </div>
+          </div>
           <label>
             <span>类型</span>
             <select id="categoryFilter"></select>
@@ -51,7 +54,6 @@
         <section class="results-pane" aria-label="说明书列表">
           <div class="pane-head">
             <strong>说明书</strong>
-            <button id="clearFilters" type="button">清空</button>
           </div>
           <div class="manual-list" id="manualList"></div>
         </section>
