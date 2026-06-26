@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>产品说明书知识库</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-row">
+          <div>
+            <h1>产品说明书知识库</h1>
+            <div class="build-summary" id="buildSummary">正在加载</div>
+          </div>
+          <div class="result-total" id="resultTotal">0 份</div>
+        </div>
+
+        <div class="controls" aria-label="筛选">
+          <label class="search-field">
+            <span>搜索</span>
+            <input
+              id="searchInput"
+              type="search"
+              autocomplete="off"
+              placeholder="型号、标题、正文"
+            />
+          </label>
+          <label>
+            <span>类型</span>
+            <select id="categoryFilter"></select>
+          </label>
+          <label>
+            <span>系列</span>
+            <select id="seriesFilter"></select>
+          </label>
+          <label>
+            <span>正文</span>
+            <select id="textStatusFilter">
+              <option value="">全部</option>
+              <option value="indexed">可检索</option>
+              <option value="needs_ocr">待 OCR</option>
+              <option value="extract_failed">抽取失败</option>
+            </select>
+          </label>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="results-pane" aria-label="说明书列表">
+          <div class="pane-head">
+            <strong>说明书</strong>
+            <button id="clearFilters" type="button">清空</button>
+          </div>
+          <div class="manual-list" id="manualList"></div>
+        </section>
+
+        <section class="detail-pane" aria-label="说明书详情">
+          <div id="manualDetail" class="detail-empty">选择一份说明书</div>
+        </section>
+      </main>
+    </div>
+
+    <script src="assets/manuals-data.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>
