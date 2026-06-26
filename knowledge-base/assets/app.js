@@ -59,6 +59,13 @@ function formatSize(bytes) {
   return `${bytes} B`;
 }
 
+function downloadFileUrl(fileUrl) {
+  const value = String(fileUrl || "");
+  if (value.startsWith("../")) return `../download/${value.slice(3)}`;
+  if (value.startsWith("/")) return `/download${value}`;
+  return `download/${value}`;
+}
+
 function optionHtml(value, label) {
   return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
 }
@@ -165,6 +172,7 @@ function renderList(results) {
     .map((manual) => {
       const active = manual.id === state.selectedId ? " is-active" : "";
       const models = (manual.models || []).slice(0, 4).join(" / ") || "未识别型号";
+      const downloadUrl = downloadFileUrl(manual.fileUrl);
       return `
         <article class="manual-card${active}">
           <button class="manual-card-main" type="button" data-id="${escapeHtml(manual.id)}" data-file-url="${escapeHtml(manual.fileUrl)}">
@@ -181,7 +189,7 @@ function renderList(results) {
           </button>
           <span class="manual-card-actions">
             <a class="manual-card-action" href="${escapeHtml(manual.fileUrl)}" data-id="${escapeHtml(manual.id)}">打开PDF</a>
-            <a class="manual-card-action" href="${escapeHtml(manual.fileUrl)}" download="${escapeHtml(manual.filename)}" data-id="${escapeHtml(manual.id)}">下载PDF</a>
+            <a class="manual-card-action" href="${escapeHtml(downloadUrl)}" download="${escapeHtml(manual.filename)}" data-id="${escapeHtml(manual.id)}">下载PDF</a>
           </span>
         </article>
       `;
@@ -260,6 +268,7 @@ function renderDetail(results) {
   if (!manual) return;
 
   const models = (manual.models || []).join(" / ") || "未识别型号";
+  const downloadUrl = downloadFileUrl(manual.fileUrl);
   els.manualDetail.innerHTML = `
     <article class="detail-card">
       <div class="mobile-pdf-bar">
@@ -280,7 +289,7 @@ function renderDetail(results) {
           </div>
           <div class="detail-actions">
             <a class="primary-action" href="${escapeHtml(manual.fileUrl)}" target="_blank" rel="noreferrer">打开 PDF</a>
-            <a class="link-button" href="${escapeHtml(manual.fileUrl)}" download="${escapeHtml(manual.filename)}">下载 PDF</a>
+            <a class="link-button" href="${escapeHtml(downloadUrl)}" download="${escapeHtml(manual.filename)}">下载 PDF</a>
           </div>
         </div>
       </header>
