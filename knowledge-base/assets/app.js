@@ -238,7 +238,10 @@ function renderDetail(results) {
   const models = (manual.models || []).join(" / ") || "未识别型号";
   els.manualDetail.innerHTML = `
     <article class="detail-card">
-      <button class="mobile-back" type="button" aria-label="返回说明书列表">返回列表</button>
+      <div class="mobile-pdf-bar">
+        <span class="mobile-pdf-title">${escapeHtml(manual.title)}</span>
+        <button class="mobile-back" type="button" aria-label="返回说明书列表">返回列表</button>
+      </div>
       <header class="detail-header">
         <img src="${escapeHtml(manual.thumbUrl)}" alt="" onerror="this.src='assets/thumbs/placeholder.svg'" />
         <div>
