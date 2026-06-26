@@ -163,7 +163,7 @@ function renderList(results) {
       const active = manual.id === state.selectedId ? " is-active" : "";
       const models = (manual.models || []).slice(0, 4).join(" / ") || "未识别型号";
       return `
-        <button class="manual-card${active}" type="button" data-id="${escapeHtml(manual.id)}">
+        <button class="manual-card${active}" type="button" data-id="${escapeHtml(manual.id)}" data-file-url="${escapeHtml(manual.fileUrl)}">
           <img src="${escapeHtml(manual.thumbUrl)}" alt="" loading="lazy" onerror="this.src='assets/thumbs/placeholder.svg'" />
           <span>
             <span class="manual-title">${escapeHtml(manual.title)}</span>
@@ -181,7 +181,13 @@ function renderList(results) {
 
   els.manualList.querySelectorAll(".manual-card").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedId = Number(button.dataset.id) || button.dataset.id;
+      if (isMobileLayout() && button.dataset.fileUrl) {
+        window.location.assign(button.dataset.fileUrl);
+        return;
+      }
+      const selectedId = Number(button.dataset.id) || button.dataset.id;
+      const manual = results.find((item) => String(item.id) === String(selectedId));
+      state.selectedId = manual?.id ?? selectedId;
       state.mobileDetailOpen = isMobileLayout();
       render();
     });
