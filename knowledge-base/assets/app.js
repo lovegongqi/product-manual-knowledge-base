@@ -166,23 +166,29 @@ function renderList(results) {
       const active = manual.id === state.selectedId ? " is-active" : "";
       const models = (manual.models || []).slice(0, 4).join(" / ") || "未识别型号";
       return `
-        <button class="manual-card${active}" type="button" data-id="${escapeHtml(manual.id)}" data-file-url="${escapeHtml(manual.fileUrl)}">
-          <img src="${escapeHtml(manual.thumbUrl)}" alt="" loading="lazy" onerror="this.src='assets/thumbs/placeholder.svg'" />
-          <span>
-            <span class="manual-title">${escapeHtml(manual.title)}</span>
-            <span class="manual-meta">
-              <span class="tag category">${escapeHtml(manual.category)}</span>
-              <span class="tag">${escapeHtml(models)}</span>
-              <span class="tag">${manual.pages || 0} 页</span>
-              ${statusTag(manual)}
+        <article class="manual-card${active}">
+          <button class="manual-card-main" type="button" data-id="${escapeHtml(manual.id)}" data-file-url="${escapeHtml(manual.fileUrl)}">
+            <img src="${escapeHtml(manual.thumbUrl)}" alt="" loading="lazy" onerror="this.src='assets/thumbs/placeholder.svg'" />
+            <span class="manual-card-content">
+              <span class="manual-title">${escapeHtml(manual.title)}</span>
+              <span class="manual-meta">
+                <span class="tag category">${escapeHtml(manual.category)}</span>
+                <span class="tag">${escapeHtml(models)}</span>
+                <span class="tag">${manual.pages || 0} 页</span>
+                ${statusTag(manual)}
+              </span>
             </span>
+          </button>
+          <span class="manual-card-actions">
+            <a class="manual-card-action" href="${escapeHtml(manual.fileUrl)}" data-id="${escapeHtml(manual.id)}">打开PDF</a>
+            <a class="manual-card-action" href="${escapeHtml(manual.fileUrl)}" download="${escapeHtml(manual.filename)}" data-id="${escapeHtml(manual.id)}">下载PDF</a>
           </span>
-        </button>
+        </article>
       `;
     })
     .join("");
 
-  els.manualList.querySelectorAll(".manual-card").forEach((button) => {
+  els.manualList.querySelectorAll(".manual-card-main").forEach((button) => {
     button.addEventListener("click", () => {
       const selectedId = Number(button.dataset.id) || button.dataset.id;
       const manual = results.find((item) => String(item.id) === String(selectedId));
@@ -194,6 +200,14 @@ function renderList(results) {
       }
       state.mobileDetailOpen = isMobileLayout();
       render();
+    });
+  });
+
+  els.manualList.querySelectorAll(".manual-card-action").forEach((link) => {
+    link.addEventListener("click", () => {
+      const selectedId = Number(link.dataset.id) || link.dataset.id;
+      state.selectedId = selectedId;
+      saveReturnState();
     });
   });
 }

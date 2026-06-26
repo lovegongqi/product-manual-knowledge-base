@@ -203,24 +203,41 @@ select:focus {
 }
 
 .manual-card {
+  position: relative;
   display: grid;
-  grid-template-columns: 66px minmax(0, 1fr);
-  gap: 12px;
   width: 100%;
-  min-height: 104px;
+  min-height: 132px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
   color: inherit;
-  padding: 10px;
+  padding: 10px 10px 42px;
   text-align: left;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
 }
 
 .manual-card:hover,
+.manual-card:focus-within,
 .manual-card.is-active {
   border-color: var(--teal);
   box-shadow: 0 8px 22px rgba(15, 118, 110, 0.12);
+}
+
+.manual-card-main {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.manual-card-main:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.22);
+  outline-offset: 3px;
 }
 
 .manual-card img {
@@ -231,6 +248,40 @@ select:focus {
   border-radius: 6px;
   background: #eef2f7;
   object-fit: cover;
+}
+
+.manual-card-content {
+  min-width: 0;
+}
+
+.manual-card-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.manual-card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  text-decoration: none;
+}
+
+.manual-card-action:hover {
+  border-color: var(--teal);
+  color: var(--teal);
 }
 
 .manual-title {
