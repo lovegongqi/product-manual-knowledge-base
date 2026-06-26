@@ -364,11 +364,15 @@ mark {
 
 @media (max-width: 980px) {
   .controls {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .search-field {
     grid-column: 1 / -1;
+  }
+
+  .controls label:not(.search-field) {
+    display: none;
   }
 
   .workspace {
