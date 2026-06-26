@@ -59,11 +59,12 @@ function formatSize(bytes) {
   return `${bytes} B`;
 }
 
-function downloadFileUrl(fileUrl) {
+function downloadFileUrl(fileUrl, filename) {
   const value = String(fileUrl || "");
-  if (value.startsWith("../")) return `../download/${value.slice(3)}`;
-  if (value.startsWith("/")) return `/download${value}`;
-  return `download/${value}`;
+  const nameQuery = filename ? `?name=${encodeURIComponent(filename)}` : "";
+  if (value.startsWith("../")) return `../download/${value.slice(3)}${nameQuery}`;
+  if (value.startsWith("/")) return `/download${value}${nameQuery}`;
+  return `download/${value}${nameQuery}`;
 }
 
 function optionHtml(value, label) {
@@ -172,7 +173,7 @@ function renderList(results) {
     .map((manual) => {
       const active = manual.id === state.selectedId ? " is-active" : "";
       const models = (manual.models || []).slice(0, 4).join(" / ") || "未识别型号";
-      const downloadUrl = downloadFileUrl(manual.fileUrl);
+      const downloadUrl = downloadFileUrl(manual.fileUrl, manual.filename);
       return `
         <article class="manual-card${active}">
           <button class="manual-card-main" type="button" data-id="${escapeHtml(manual.id)}" data-file-url="${escapeHtml(manual.fileUrl)}">
@@ -268,7 +269,7 @@ function renderDetail(results) {
   if (!manual) return;
 
   const models = (manual.models || []).join(" / ") || "未识别型号";
-  const downloadUrl = downloadFileUrl(manual.fileUrl);
+  const downloadUrl = downloadFileUrl(manual.fileUrl, manual.filename);
   els.manualDetail.innerHTML = `
     <article class="detail-card">
       <div class="mobile-pdf-bar">
