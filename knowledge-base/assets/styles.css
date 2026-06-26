@@ -131,7 +131,7 @@ select:focus {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(360px, 480px) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
   gap: 18px;
   max-width: 1500px;
   margin: 18px auto 0;
@@ -270,6 +270,10 @@ select:focus {
   overflow: hidden;
 }
 
+.mobile-back {
+  display: none;
+}
+
 .detail-header {
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr);
@@ -373,6 +377,47 @@ mark {
 
   .manual-list {
     max-height: none;
+  }
+
+  .detail-pane {
+    display: none;
+  }
+
+  body.mobile-detail-open {
+    overflow: hidden;
+  }
+
+  body.mobile-detail-open .detail-pane {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    overflow: auto;
+    background: var(--surface);
+  }
+
+  body.mobile-detail-open .detail-card {
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .mobile-back {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    min-height: 46px;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.98);
+    color: var(--teal);
+    font-weight: 750;
+    padding: 0 16px;
+    text-align: left;
   }
 }
 

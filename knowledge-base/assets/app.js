@@ -11,6 +11,7 @@ const els = {
   clearFilters: document.getElementById("clearFilters"),
   manualList: document.getElementById("manualList"),
   manualDetail: document.getElementById("manualDetail"),
+  detailPane: document.querySelector(".detail-pane"),
 };
 
 const statusLabel = {
@@ -30,6 +31,7 @@ const state = {
   series: "",
   textStatus: "",
   selectedId: manuals[0]?.id ?? null,
+  mobileDetailOpen: false,
 };
 
 function normalize(value) {
@@ -147,6 +149,8 @@ function renderList(results) {
   if (!results.length) {
     els.manualList.innerHTML = `<div class="empty-list">没有匹配的说明书</div>`;
     els.manualDetail.innerHTML = `<div class="detail-empty">没有匹配的说明书</div>`;
+    state.mobileDetailOpen = false;
+    syncMobileDetailState();
     return;
   }
 
@@ -178,9 +182,24 @@ function renderList(results) {
   els.manualList.querySelectorAll(".manual-card").forEach((button) => {
     button.addEventListener("click", () => {
       state.selectedId = Number(button.dataset.id) || button.dataset.id;
+      state.mobileDetailOpen = isMobileLayout();
       render();
     });
   });
+}
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 980px)").matches;
+}
+
+function syncMobileDetailState() {
+  const mobileOpen = state.mobileDetailOpen && isMobileLayout();
+  document.body.classList.toggle("mobile-detail-open", mobileOpen);
+  if (isMobileLayout()) {
+    els.detailPane?.setAttribute("aria-hidden", mobileOpen ? "false" : "true");
+  } else {
+    els.detailPane?.removeAttribute("aria-hidden");
+  }
 }
 
 function matchingSnippet(manual) {
@@ -219,6 +238,7 @@ function renderDetail(results) {
   const models = (manual.models || []).join(" / ") || "未识别型号";
   els.manualDetail.innerHTML = `
     <article class="detail-card">
+      <button class="mobile-back" type="button" aria-label="返回说明书列表">返回列表</button>
       <header class="detail-header">
         <img src="${escapeHtml(manual.thumbUrl)}" alt="" onerror="this.src='assets/thumbs/placeholder.svg'" />
         <div>
@@ -243,6 +263,11 @@ function renderDetail(results) {
       </div>
     </article>
   `;
+
+  els.manualDetail.querySelector(".mobile-back")?.addEventListener("click", () => {
+    state.mobileDetailOpen = false;
+    render();
+  });
 }
 
 function renderSummary() {
@@ -258,23 +283,28 @@ function render() {
   renderSummary();
   renderList(results);
   renderDetail(results);
+  syncMobileDetailState();
 }
 
 function bindEvents() {
   els.searchInput.addEventListener("input", () => {
     state.query = els.searchInput.value;
+    state.mobileDetailOpen = false;
     render();
   });
   els.categoryFilter.addEventListener("change", () => {
     state.category = els.categoryFilter.value;
+    state.mobileDetailOpen = false;
     render();
   });
   els.seriesFilter.addEventListener("change", () => {
     state.series = els.seriesFilter.value;
+    state.mobileDetailOpen = false;
     render();
   });
   els.textStatusFilter.addEventListener("change", () => {
     state.textStatus = els.textStatusFilter.value;
+    state.mobileDetailOpen = false;
     render();
   });
   els.clearFilters.addEventListener("click", () => {
@@ -286,8 +316,16 @@ function bindEvents() {
     els.categoryFilter.value = "";
     els.seriesFilter.value = "";
     els.textStatusFilter.value = "";
+    state.mobileDetailOpen = false;
     render();
   });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.mobileDetailOpen) {
+      state.mobileDetailOpen = false;
+      render();
+    }
+  });
+  window.addEventListener("resize", syncMobileDetailState);
 }
 
 initFilters();
