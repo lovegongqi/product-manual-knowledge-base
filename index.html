@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>怡口净水产品知识库</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --surface: #ffffff;
+        --ink: #18212f;
+        --muted: #647184;
+        --line: #d8dee8;
+        --teal: #0f766e;
+        --blue: #2563eb;
+        --shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "PingFang SC",
+          "Microsoft YaHei",
+          sans-serif;
+        letter-spacing: 0;
+      }
+
+      main {
+        width: min(980px, 100%);
+        margin: 0 auto;
+        padding: 42px 22px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(26px, 5vw, 38px);
+        line-height: 1.16;
+      }
+
+      .summary {
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .entry-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .entry {
+        min-height: 188px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: inherit;
+        display: grid;
+        align-content: space-between;
+        gap: 18px;
+        padding: 20px;
+        text-decoration: none;
+        box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+      }
+
+      .entry:hover,
+      .entry:focus {
+        border-color: var(--teal);
+        box-shadow: var(--shadow);
+        outline: none;
+      }
+
+      .entry h2 {
+        margin: 0 0 8px;
+        font-size: 24px;
+        line-height: 1.25;
+      }
+
+      .entry p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .entry span {
+        color: var(--blue);
+        font-weight: 700;
+      }
+
+      @media (max-width: 680px) {
+        main {
+          padding: 28px 14px;
+        }
+
+        .entry-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>怡口净水产品知识库</h1>
+      <p class="summary">产品说明书与水批报告的静态查询入口。</p>
+
+      <div class="entry-grid">
+        <a class="entry" href="knowledge-base/">
+          <div>
+            <h2>产品说明书</h2>
+            <p>查询产品型号、分类、正文内容和装箱清单。</p>
+          </div>
+          <span>进入说明书</span>
+        </a>
+        <a class="entry" href="water-approvals/">
+          <div>
+            <h2>水批报告</h2>
+            <p>查询并打开水批 PDF，支持按型号和关键词搜索。</p>
+          </div>
+          <span>进入水批报告</span>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

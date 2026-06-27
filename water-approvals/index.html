@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>怡口净水水批报告</title>
+    <link rel="stylesheet" href="assets/styles.css?v=20260627" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-row">
+          <div>
+            <h1>怡口净水水批报告</h1>
+            <div class="build-summary" id="buildSummary">正在加载</div>
+          </div>
+          <nav class="top-links" aria-label="页面导航">
+            <a href="../">主页</a>
+            <a href="../knowledge-base/">产品说明书</a>
+          </nav>
+        </div>
+
+        <div class="search-row">
+          <label class="search-field" for="searchInput">
+            <span>搜索</span>
+            <input id="searchInput" type="search" autocomplete="off" placeholder="型号、标题、关键词" />
+          </label>
+          <button id="clearSearch" class="clear-button" type="button">清空</button>
+          <div class="result-total" id="resultTotal">0 份</div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="report-list" id="reportList"></div>
+        <div class="empty-state" id="emptyState" hidden>没有找到匹配的水批报告</div>
+      </main>
+    </div>
+
+    <script src="assets/reports-data.js?v=20260627"></script>
+    <script src="assets/app.js?v=20260627"></script>
+  </body>
+</html>
