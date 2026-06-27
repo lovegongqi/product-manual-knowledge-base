@@ -23,13 +23,21 @@ THUMB_DIR = ASSETS_DIR / "thumbs"
 DATA_PATH = ASSETS_DIR / "manuals-data.js"
 VISION_OCR_SOURCE = ROOT / "scripts" / "vision_ocr.swift"
 TMP_DIR = ROOT / "tmp" / "pdfs" / "kb_ocr"
+MODEL_TYPE_OVERRIDE_PATH = ROOT / "scripts" / "model_type_overrides.json"
 
 TEXT_CHAR_LIMIT = 80_000
 LOW_TEXT_THRESHOLD = 500
 CATEGORY_ORDER = [
     "反渗透净水机",
-    "软水机",
+    "超滤机",
+    "净热一体机",
+    "管线机",
+    "商用直饮机",
     "前置过滤器",
+    "中央净水机",
+    "软水机",
+    "净化软水机",
+    "壁挂软水机",
     "管线机/饮水机",
     "商用直饮",
     "复合/中央净水",
@@ -173,6 +181,95 @@ def detect_category(title: str, filename: str) -> str:
     ):
         return "复合/中央净水"
     return "其他"
+
+
+def load_model_type_overrides() -> dict[str, str]:
+    if not MODEL_TYPE_OVERRIDE_PATH.exists():
+        return {}
+    payload = json.loads(MODEL_TYPE_OVERRIDE_PATH.read_text(encoding="utf-8"))
+    return {
+        str(model).strip().upper(): str(machine_type or "").strip()
+        for model, machine_type in payload.items()
+    }
+
+
+def compact_model(value: str) -> str:
+    return re.sub(r"[^A-Z0-9]+", "", value.upper())
+
+
+def lookup_model_type(
+    model: str,
+    title: str,
+    filename: str,
+    model_types: dict[str, str],
+) -> str:
+    key = model.upper()
+    if key in model_types:
+        return model_types[key]
+
+    hay = f"{title} {filename}".upper()
+    compact_hay = compact_model(hay)
+    compact_key = compact_model(key)
+
+    title_matches = []
+    for model_key, machine_type in model_types.items():
+        compact_candidate = compact_model(model_key)
+        if not compact_candidate or len(compact_candidate) < 4 or not machine_type:
+            continue
+        if compact_candidate in compact_hay:
+            title_matches.append((len(compact_candidate), machine_type))
+    if title_matches:
+        title_matches.sort(reverse=True)
+        return title_matches[0][1]
+
+    compact_matches = []
+    for model_key, machine_type in model_types.items():
+        compact_candidate = compact_model(model_key)
+        if not compact_candidate or not machine_type:
+            continue
+        if compact_candidate == compact_key:
+            return machine_type
+        if (
+            compact_key
+            and compact_candidate.startswith(compact_key)
+            and compact_candidate in compact_hay
+        ):
+            compact_matches.append((len(compact_candidate), machine_type))
+    if compact_matches:
+        compact_matches.sort(reverse=True)
+        return compact_matches[0][1]
+
+    return ""
+
+
+def category_from_model_types(
+    models: list[str],
+    title: str,
+    filename: str,
+    model_types: dict[str, str],
+) -> str:
+    if not model_types:
+        return ""
+
+    ordered_types = []
+    hay = f"{title} {filename}".upper()
+    compact_hay = compact_model(hay)
+    title_matches = []
+    for model_key, machine_type in model_types.items():
+        compact_candidate = compact_model(model_key)
+        if not compact_candidate or len(compact_candidate) < 4 or not machine_type:
+            continue
+        if compact_candidate in compact_hay:
+            title_matches.append((compact_hay.index(compact_candidate), machine_type))
+    for _, machine_type in sorted(title_matches):
+        if machine_type not in ordered_types:
+            ordered_types.append(machine_type)
+
+    for model in models:
+        machine_type = lookup_model_type(model, title, filename, model_types)
+        if machine_type and machine_type not in ordered_types:
+            ordered_types.append(machine_type)
+    return " / ".join(ordered_types)
 
 
 def detect_series(title: str, filename: str, category: str) -> str:
@@ -454,6 +551,7 @@ def build(args: argparse.Namespace) -> None:
     pdftoppm = bundled_tool("pdftoppm")
     manifest = load_manifest()
     existing_data = load_existing_data()
+    model_type_overrides = load_model_type_overrides()
     ocr_tool = compile_ocr_tool() if args.ocr_needs else None
     pdfs = sorted(ROOT.glob("*.pdf"), key=lambda path: path.name.lower())
 
@@ -470,7 +568,11 @@ def build(args: argparse.Namespace) -> None:
         source_title = item.get("title", "")
         title = clean_title(pdf_path.name, source_title)
         models = extract_models(title, pdf_path.name, item.get("originalFileName", ""))
-        category = detect_category(title, pdf_path.name)
+        detected_category = detect_category(title, pdf_path.name)
+        category = (
+            category_from_model_types(models, title, pdf_path.name, model_type_overrides)
+            or detected_category
+        )
         series = detect_series(title, pdf_path.name, category)
         pages = page_count(pdf_path, pdfinfo)
         thumb_url = render_thumbnail(

@@ -1,5 +1,8 @@
 const manuals = Array.isArray(window.MANUALS) ? window.MANUALS : [];
 const build = window.KB_BUILD || {};
+const packingLists =
+  window.PACKING_LISTS && typeof window.PACKING_LISTS === "object" ? window.PACKING_LISTS : {};
+const packingBuild = window.PACKING_BUILD || {};
 
 const els = {
   buildSummary: document.getElementById("buildSummary"),
@@ -12,6 +15,10 @@ const els = {
   manualList: document.getElementById("manualList"),
   manualDetail: document.getElementById("manualDetail"),
   detailPane: document.querySelector(".detail-pane"),
+  packingModal: document.getElementById("packingModal"),
+  packingTitle: document.getElementById("packingTitle"),
+  packingSubtitle: document.getElementById("packingSubtitle"),
+  packingBody: document.getElementById("packingBody"),
 };
 
 const statusLabel = {
@@ -19,6 +26,26 @@ const statusLabel = {
   needs_ocr: "正文待 OCR",
   extract_failed: "抽取失败",
 };
+
+const packingStatusLabel = {
+  found: "已找到清单",
+  text_only: "已找到文字",
+  not_found: "未找到明确清单",
+};
+
+const tocLikeItems = new Set([
+  "产品安装",
+  "安装说明",
+  "使用说明",
+  "注意事项",
+  "故障诊断",
+  "环保清单",
+  "有害物质",
+  "产品保养",
+  "维修记录",
+  "保修卡",
+  "质保条款",
+]);
 
 const collator = new Intl.Collator("zh-Hans-CN", {
   numeric: true,
@@ -153,6 +180,137 @@ function statusTag(manual) {
   return `<span class="tag ${escapeHtml(status)}">${escapeHtml(statusLabel[status] || status)}</span>`;
 }
 
+function packingFor(manualOrId) {
+  const id = typeof manualOrId === "object" ? manualOrId?.id : manualOrId;
+  return packingLists[String(id)] || null;
+}
+
+function packingButtonHtml(manual, className) {
+  if (!packingFor(manual)) return "";
+  return `<button class="${className}" type="button" data-id="${escapeHtml(manual.id)}">装箱清单</button>`;
+}
+
+function tableItemsFromText(value) {
+  const text = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const match = text.match(/序号\s+名称\s+(.+?)\s+数量\s+(.+?)(?:\s+技术参数|\s+产品型号|\s+备注|$)/);
+  if (!match) return [];
+
+  const names = match[1].split(/\s+/).filter(Boolean);
+  const quantities = match[2].split(/\s+/).filter(Boolean);
+  if (!names.length || !quantities.length || quantities.length > names.length + 2) return [];
+
+  return names.slice(0, quantities.length).map((name, index) => `${name}：${quantities[index]}`);
+}
+
+function packingItemList(items) {
+  const tableItems = tableItemsFromText(items);
+  if (tableItems.length) return tableItems;
+
+  if (Array.isArray(items)) {
+    return items.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  return String(items || "")
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function isLikelyTocList(items) {
+  if (items.length < 3) return false;
+  const tocHits = items.filter((item) => tocLikeItems.has(item)).length;
+  return tocHits / items.length >= 0.6;
+}
+
+function renderPackingItems(title, items) {
+  const cleaned = packingItemList(items);
+  if (!cleaned.length) return "";
+  if (title === "产品组件" && isLikelyTocList(cleaned)) return "";
+
+  return `
+    <section class="packing-section">
+      <h3>${escapeHtml(title)}</h3>
+      <table class="packing-table">
+        <tbody>
+          ${cleaned
+            .map(
+              (item, index) => `
+                <tr>
+                  <th scope="row">${index + 1}</th>
+                  <td>${escapeHtml(item)}</td>
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </section>
+  `;
+}
+
+function renderPackingText(title, text) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  return `
+    <section class="packing-section">
+      <h3>${escapeHtml(title)}</h3>
+      <pre class="packing-source">${escapeHtml(value)}</pre>
+    </section>
+  `;
+}
+
+function openPackingModal(id) {
+  const item = packingFor(id);
+  if (!item || !els.packingModal) return;
+
+  const status = item.status || "not_found";
+  const meta = [
+    (item.models || []).join(" / "),
+    (item.machineTypes || []).join(" / "),
+    item.page ? `第 ${item.page} 页` : "",
+    item.keyword || "",
+  ].filter(Boolean);
+  const imageHtml = (item.imageUrls || [])
+    .map(
+      (src) =>
+        `<img class="packing-image" src="${escapeHtml(src)}" alt="${escapeHtml(item.title)} 装箱清单截图" loading="lazy" />`,
+    )
+    .join("");
+  const keyword = item.keyword || "";
+  const accessorySource =
+    item.accessories || (/装箱|包装|随箱|配件/.test(keyword) ? item.pageText : "");
+  const rawTextTitle = item.pageText ? "清单页文字" : "清单原文";
+  const rawText = item.pageText || item.sourceText;
+  const textHtml = [
+    renderPackingItems("产品组件", item.components),
+    renderPackingItems("装箱/随箱配件", accessorySource),
+    renderPackingText(rawTextTitle, rawText),
+  ].join("");
+
+  els.packingTitle.textContent = item.title || "装箱清单";
+  els.packingSubtitle.textContent = meta.join(" · ");
+  els.packingBody.innerHTML = `
+    <div class="packing-status ${escapeHtml(status)}">
+      ${escapeHtml(packingStatusLabel[status] || status)}
+    </div>
+    ${
+      imageHtml
+        ? `<div class="packing-images">${imageHtml}</div>`
+        : `<div class="packing-note">这份说明书暂未生成清单截图，请以文字提取结果或原 PDF 为准。</div>`
+    }
+    ${textHtml || `<div class="packing-note">未在当前说明书中找到明确的装箱清单文字。</div>`}
+  `;
+  els.packingModal.hidden = false;
+  document.body.classList.add("packing-open");
+}
+
+function closePackingModal() {
+  if (!els.packingModal) return;
+  els.packingModal.hidden = true;
+  document.body.classList.remove("packing-open");
+}
+
 function renderList(results) {
   els.resultTotal.textContent = `${results.length} 份`;
 
@@ -173,6 +331,7 @@ function renderList(results) {
       const active = manual.id === state.selectedId ? " is-active" : "";
       const models = (manual.models || []).slice(0, 4).join(" / ") || "未识别型号";
       const downloadUrl = downloadFileUrl(manual.fileUrl);
+      const packingButton = packingButtonHtml(manual, "manual-card-action packing-list-action");
       return `
         <article class="manual-card${active}">
           <button class="manual-card-main" type="button" data-id="${escapeHtml(manual.id)}" data-file-url="${escapeHtml(manual.fileUrl)}">
@@ -190,6 +349,7 @@ function renderList(results) {
           <span class="manual-card-actions">
             <a class="manual-card-action" href="${escapeHtml(manual.fileUrl)}" data-id="${escapeHtml(manual.id)}">打开PDF</a>
             <a class="manual-card-action" href="${escapeHtml(downloadUrl)}" download="${escapeHtml(manual.filename)}" data-id="${escapeHtml(manual.id)}">下载PDF</a>
+            ${packingButton}
           </span>
         </article>
       `;
@@ -212,9 +372,14 @@ function renderList(results) {
   });
 
   els.manualList.querySelectorAll(".manual-card-action").forEach((link) => {
-    link.addEventListener("click", () => {
+    link.addEventListener("click", (event) => {
       const selectedId = Number(link.dataset.id) || link.dataset.id;
       state.selectedId = selectedId;
+      if (link.classList.contains("packing-list-action")) {
+        event.preventDefault();
+        openPackingModal(selectedId);
+        return;
+      }
       saveReturnState();
     });
   });
@@ -269,6 +434,7 @@ function renderDetail(results) {
 
   const models = (manual.models || []).join(" / ") || "未识别型号";
   const downloadUrl = downloadFileUrl(manual.fileUrl);
+  const packingButton = packingButtonHtml(manual, "link-button packing-detail-action");
   els.manualDetail.innerHTML = `
     <article class="detail-card">
       <div class="mobile-pdf-bar">
@@ -290,6 +456,7 @@ function renderDetail(results) {
           <div class="detail-actions">
             <a class="primary-action" href="${escapeHtml(manual.fileUrl)}" target="_blank" rel="noreferrer">打开 PDF</a>
             <a class="link-button" href="${escapeHtml(downloadUrl)}" download="${escapeHtml(manual.filename)}">下载 PDF</a>
+            ${packingButton}
           </div>
         </div>
       </header>
@@ -304,6 +471,9 @@ function renderDetail(results) {
     state.mobileDetailOpen = false;
     render();
   });
+  els.manualDetail.querySelector(".packing-detail-action")?.addEventListener("click", () => {
+    openPackingModal(manual.id);
+  });
 }
 
 function renderSummary() {
@@ -311,7 +481,8 @@ function renderSummary() {
   const indexed = counts.indexed || 0;
   const needsOcr = counts.needs_ocr || 0;
   const failed = counts.extract_failed || 0;
-  els.buildSummary.textContent = `${manuals.length} 份 PDF · ${indexed} 份正文可检索 · ${needsOcr} 份待 OCR · ${failed} 份抽取失败`;
+  const foundPacking = packingBuild.foundCount || 0;
+  els.buildSummary.textContent = `${manuals.length} 份 PDF · ${indexed} 份正文可检索 · ${needsOcr} 份待 OCR · ${failed} 份抽取失败 · ${foundPacking} 份装箱清单`;
 }
 
 function render() {
@@ -408,10 +579,18 @@ function bindEvents() {
     render();
   });
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.mobileDetailOpen) {
+    if (event.key !== "Escape") return;
+    if (els.packingModal && !els.packingModal.hidden) {
+      closePackingModal();
+      return;
+    }
+    if (state.mobileDetailOpen) {
       state.mobileDetailOpen = false;
       render();
     }
+  });
+  els.packingModal?.querySelectorAll("[data-packing-close]").forEach((button) => {
+    button.addEventListener("click", closePackingModal);
   });
   window.addEventListener("resize", syncMobileDetailState);
 }

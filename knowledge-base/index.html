@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>怡口净水产品说明书</title>
-    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="assets/styles.css?v=packing-list-20260627" />
   </head>
   <body>
     <div class="app-shell">
@@ -64,7 +64,22 @@
       </main>
     </div>
 
-    <script src="assets/manuals-data.js"></script>
-    <script src="assets/app.js?v=download-name-20260626"></script>
+    <div class="packing-modal" id="packingModal" hidden>
+      <div class="packing-backdrop" data-packing-close></div>
+      <section class="packing-dialog" role="dialog" aria-modal="true" aria-labelledby="packingTitle">
+        <header class="packing-head">
+          <div>
+            <h2 id="packingTitle">装箱清单</h2>
+            <div class="packing-subtitle" id="packingSubtitle"></div>
+          </div>
+          <button class="packing-close" type="button" data-packing-close aria-label="关闭装箱清单">关闭</button>
+        </header>
+        <div class="packing-body" id="packingBody"></div>
+      </section>
+    </div>
+
+    <script src="assets/manuals-data.js?v=types-packing-20260627b"></script>
+    <script src="assets/packing-data.js?v=packing-list-20260627"></script>
+    <script src="assets/app.js?v=packing-list-20260627c"></script>
   </body>
 </html>
