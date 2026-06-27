@@ -56,7 +56,7 @@
 
       .entry-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
       }
 
@@ -107,6 +107,12 @@
           grid-template-columns: 1fr;
         }
       }
+
+      @media (min-width: 681px) and (max-width: 900px) {
+        .entry-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
     </style>
   </head>
   <body>
@@ -128,6 +134,13 @@
             <p>查询并打开水批 PDF，支持按型号和关键词搜索。</p>
           </div>
           <span>进入水批报告</span>
+        </a>
+        <a class="entry" href="https://ykcrm.mlmll.cn/product-library">
+          <div>
+            <h2>怡口产品条码匹配</h2>
+            <p>跳转到产品条码匹配页面，用于查询和匹配产品信息。</p>
+          </div>
+          <span>进入条码匹配</span>
         </a>
       </div>
     </main>
