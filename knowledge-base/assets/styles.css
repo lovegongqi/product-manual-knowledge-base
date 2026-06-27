@@ -85,6 +85,39 @@ h1 {
   font-size: 13px;
 }
 
+.brand-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.top-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.top-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 13px;
+  text-decoration: none;
+}
+
+.top-links a:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
 .result-total {
   border: 1px solid #bfdbfe;
   border-radius: 8px;
@@ -782,6 +815,11 @@ mark {
   .brand-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .brand-actions,
+  .top-links {
+    justify-content: flex-start;
   }
 
   h1 {
