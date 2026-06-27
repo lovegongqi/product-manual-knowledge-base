@@ -67,6 +67,39 @@ PAGE_KEYWORDS = [
     ("组件包", 56),
     ("开箱", 48),
 ]
+EXPLICIT_PAGE_KEYWORDS = {
+    "装箱清单如下",
+    "装箱清单",
+    "包装清单",
+    "随箱附件",
+    "附件清单",
+    "产品配件",
+    "产品组件",
+    "产品部件",
+    "各部件",
+    "组件名称",
+}
+CONTAINER_PAGE_KEYWORDS = {
+    "纸箱内还包括",
+    "包装箱内",
+    "彩盒内",
+}
+GENERIC_PAGE_KEYWORDS = {
+    "配件包",
+    "组件包",
+    "开箱",
+}
+INSTALL_PAGE_TERMS = [
+    "安装提示",
+    "安装步骤",
+    "安装前的准备工作",
+    "安装水龙头",
+    "部件连接",
+    "连接净水端",
+    "连接管路",
+    "水管安装",
+    "首次安装",
+]
 
 POSITIVE_TERMS = [
     "主机",
@@ -316,8 +349,18 @@ def page_score(text: str) -> tuple[int, str]:
         if term in normalized:
             score -= 22
 
+    if best_keyword in GENERIC_PAGE_KEYWORDS and any(
+        term in normalized for term in INSTALL_PAGE_TERMS
+    ):
+        score -= 60
+    elif best_keyword in CONTAINER_PAGE_KEYWORDS and any(
+        term in normalized for term in INSTALL_PAGE_TERMS
+    ):
+        score -= 35
     if "目录" in normalized[:120]:
         score -= 65
+    if re.search(r"序号.*名称.*数量", normalized):
+        score += 28
     if "开箱" in normalized and not re.search(
         r"纸箱内还包括|箱内|包装箱|彩盒|配件|附件|小零件|零件包", normalized
     ):
@@ -326,6 +369,26 @@ def page_score(text: str) -> tuple[int, str]:
         score += 8
 
     return score, best_keyword
+
+
+def page_keyword_tier(keyword: str) -> int:
+    if keyword in EXPLICIT_PAGE_KEYWORDS:
+        return 3
+    if keyword in CONTAINER_PAGE_KEYWORDS:
+        return 2
+    if keyword in GENERIC_PAGE_KEYWORDS:
+        return 1
+    return 0
+
+
+def page_candidate_key(candidate: dict) -> tuple[int, int, int, int]:
+    source_priority = 1 if candidate.get("source") == "ocr" else 0
+    return (
+        page_keyword_tier(candidate.get("keyword") or ""),
+        candidate.get("score") or 0,
+        source_priority,
+        -int(candidate.get("page") or 0),
+    )
 
 
 def best_page(pages: list[dict], min_score: int = 42) -> dict | None:
@@ -342,10 +405,7 @@ def best_page(pages: list[dict], min_score: int = 42) -> dict | None:
             "keyword": keyword,
             "image_path": page.get("image_path", ""),
         }
-        if best is None or (candidate["score"], -candidate["page"]) > (
-            best["score"],
-            -best["page"],
-        ):
+        if best is None or page_candidate_key(candidate) > page_candidate_key(best):
             best = candidate
     return best
 
@@ -525,6 +585,90 @@ def weak_extracted_list(value: str) -> bool:
     return stop_hits >= 2 and item_hits == 0
 
 
+def noisy_extracted_list(value: str) -> bool:
+    lines = [line.strip() for line in (value or "").splitlines() if line.strip()]
+    if not lines:
+        return False
+    head = " ".join(lines[:4])
+    if any(
+        term in head
+        for term in (
+            "产品功能",
+            "功能示意图",
+            "滤芯名称",
+            "技术参数",
+            "安装提示",
+            "产品介绍",
+            "产品维修指南",
+            "产品保养",
+            "质保条款",
+            "外观示意图",
+            "故障代码",
+        )
+    ):
+        return True
+    normalized = " ".join(lines)
+    if any(
+        term in normalized
+        for term in ("OWNER'S", "MANUAL", "扫一扫", "净享生活", "顶盖上方", "市政自来水")
+    ):
+        return True
+    if re.search(r"\d{2,4}\s*mm", normalized, re.I):
+        return True
+    return weak_extracted_list(value)
+
+
+def sections_useful(sections: dict) -> bool:
+    values = [sections.get("components") or "", sections.get("accessories") or ""]
+    useful = [value for value in values if value and not noisy_extracted_list(value)]
+    return bool(useful)
+
+
+def empty_sections() -> dict:
+    return {
+        "status": "not_found",
+        "components": "",
+        "accessories": "",
+        "componentStatus": "not_found",
+        "accessoryStatus": "not_found",
+        "componentKeyword": "",
+        "accessoryKeyword": "",
+        "sourceText": "",
+        "keyword": "",
+    }
+
+
+def candidate_needs_ocr(candidate: dict | None, sections: dict) -> bool:
+    if not candidate:
+        return True
+    keyword = candidate.get("keyword") or ""
+    if keyword not in EXPLICIT_PAGE_KEYWORDS:
+        return True
+    if candidate.get("source") == "pdf-text" and not sections_useful(sections):
+        return True
+    return False
+
+
+def choose_best_with_ocr(pdf_pages: list[dict], ocr_pages: list[dict]) -> dict | None:
+    combined_candidate = best_page([*pdf_pages, *ocr_pages])
+    ocr_candidate = best_page(ocr_pages)
+    if not combined_candidate or not ocr_candidate:
+        return combined_candidate
+
+    combined_sections = sections_from_text(combined_candidate.get("text") or "")
+    ocr_sections = sections_from_text(ocr_candidate.get("text") or "")
+    if sections_useful(ocr_sections) and not sections_useful(combined_sections):
+        return ocr_candidate
+    if (
+        sections_useful(ocr_sections)
+        and ocr_candidate.get("page") == combined_candidate.get("page")
+        and page_keyword_tier(ocr_candidate.get("keyword") or "")
+        >= page_keyword_tier(combined_candidate.get("keyword") or "")
+    ):
+        return ocr_candidate
+    return combined_candidate
+
+
 def merge_sections(primary: dict, fallback: dict) -> dict:
     merged = dict(primary)
     for field in ("components", "accessories", "sourceText"):
@@ -550,6 +694,14 @@ def merge_sections(primary: dict, fallback: dict) -> dict:
     return merged
 
 
+def choose_sections(page_sections: dict, manual_sections_result: dict) -> dict:
+    if sections_useful(page_sections):
+        return page_sections
+    if sections_useful(manual_sections_result):
+        return merge_sections(manual_sections_result, page_sections)
+    return page_sections if page_sections.get("status") == "found" else empty_sections()
+
+
 def build_payload() -> dict:
     pdftoppm = bundled_tool("pdftoppm")
     ocr_tool = compile_ocr_tool()
@@ -563,16 +715,27 @@ def build_payload() -> dict:
     for index, manual in enumerate(processed_manuals, 1):
         typed_models = manual_model_types(manual, model_types)
         pdf_path = pdf_path_for(manual)
-        sections = manual_sections(manual)
-
-        page_candidate = best_page(extract_page_texts(pdf_path, PAGE_SCAN_LIMIT))
-        if not page_candidate:
-            page_candidate = best_page(
-                ocr_front_pages(pdf_path, pdftoppm, ocr_tool, OCR_SCAN_LIMIT)
+        manual_sections_result = manual_sections(manual)
+        pdf_pages = extract_page_texts(pdf_path, PAGE_SCAN_LIMIT)
+        page_candidate = best_page(pdf_pages)
+        page_sections = (
+            sections_from_text(page_candidate.get("text") or "")
+            if page_candidate
+            else empty_sections()
+        )
+        if candidate_needs_ocr(page_candidate, page_sections):
+            ocr_pages = ocr_front_pages(pdf_path, pdftoppm, ocr_tool, OCR_SCAN_LIMIT)
+            page_candidate = choose_best_with_ocr(pdf_pages, ocr_pages)
+            page_sections = (
+                sections_from_text(page_candidate.get("text") or "")
+                if page_candidate
+                else page_sections
             )
+        sections = choose_sections(page_sections, manual_sections_result)
         if page_candidate:
-            sections = merge_sections(
-                sections, sections_from_text(page_candidate.get("text") or "")
+            sections = choose_sections(
+                sections_from_text(page_candidate.get("text") or ""),
+                manual_sections_result,
             )
 
         image_url = ""

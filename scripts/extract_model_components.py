@@ -61,13 +61,11 @@ STOP_KEYWORDS = [
     "安装提示",
     "确认整机",
     "质保范围",
-    "使用说明",
     "注意事项",
     "故障",
     "环保清单",
     "有害物质",
     "质保条款",
-    "保修卡",
     "维护",
 ]
 NOISE_PATTERNS = [
@@ -78,6 +76,8 @@ NOISE_PATTERNS = [
     r"^FCOWATER$",
     r"^F9OWATER$",
     r"^SINCE 1925\\.?$",
+    r"^[×xX]\s*\d+\s*$",
+    r"^\d+\s*(台|个|只|支|根|本|张|套|件|米)\s*$",
 ]
 
 
@@ -110,6 +110,11 @@ def compact_items(items: list[str], max_items: int = 30) -> str:
     seen = set()
     for item in items:
         item = normalize_item(item)
+        for stop in STOP_KEYWORDS:
+            pos = item.find(stop)
+            if pos > 1:
+                item = item[:pos].strip(" ；;，,。:：-")
+                break
         if len(item) < 2:
             continue
         if len(item) > 90:
@@ -181,7 +186,7 @@ def table_name_items(snippet: str) -> list[str]:
             break
 
     items: list[str] = []
-    for token in re.split(r"\s{1,}|、|/|，|；|;", part):
+    for token in re.split(r"\s{1,}|、|，|；|;", part):
         item = normalize_item(token)
         if len(item) < 2:
             continue
@@ -197,16 +202,34 @@ def table_name_items(snippet: str) -> list[str]:
 
 def split_phrase_items(snippet: str) -> list[str]:
     text = clean_space(snippet)
+    function_pos = text.find("产品功能")
+    late_intro = text.find("产品介绍", function_pos + len("产品功能"))
+    if 0 <= function_pos < 160 and late_intro > function_pos:
+        tail = text[late_intro + len("产品介绍") :]
+        if re.search(r"主机|滤芯|水龙头|龙头|PE管|防落夹|接头|适配器|说明书", tail[:900]):
+            text = tail
+    for extra_stop in (
+        "扫一扫",
+        "OWNER'S MANUAL",
+        "顶盖上方",
+        "本产品为以",
+        "市政自来水经过",
+        "经过此处理后",
+    ):
+        idx = text.find(extra_stop)
+        if idx > 30:
+            text = text[:idx]
+            break
     for stop in STOP_KEYWORDS:
         idx = text.find(stop)
         if idx > 20:
             text = text[:idx]
             break
-    text = re.sub(r"^(产品组件|产品部件|各部件|零部件|结构示意图)\s*", "", text)
+    text = re.sub(r"^(产品组件|产品配件|随箱附件|产品部件|各部件|零部件|结构示意图)\s*", "", text)
     text = re.sub(r"本产品的所有组件都包含.*?包括以下组件[:：]?", "", text)
     text = re.sub(r"装箱清单如下[:：]?", "", text)
     text = text.replace("；", " ").replace(";", " ").replace("，", " ")
-    words = [normalize_item(word) for word in re.split(r"\s{1,}|/|、", text)]
+    words = [normalize_item(word) for word in re.split(r"\s{1,}|、", text)]
     return [word for word in words if 2 <= len(word) <= 28]
 
 
@@ -237,6 +260,14 @@ def find_section(text: str, keywords: list[str], prefer_list: bool) -> tuple[str
                 score -= 30
             if "目录" in normalized[max(0, idx - 20) : idx + 80]:
                 score -= 15
+            if prefer_list and re.search(
+                r"产品维修指南|产品保养|质保条款|保修卡|外观示意图|故障代码|有毒有害物质",
+                chunk[:260],
+            ) and not re.search(
+                r"序号|名称|数量|主机|滤芯|管线机|PE管|接头|合格证|装箱清单如下",
+                chunk[:520],
+            ):
+                score -= 60
             if keyword in ("装箱清单如下", "装箱清单", "包装清单"):
                 score += 8
             if keyword == "开箱" and "纸箱内还包括" in chunk:
