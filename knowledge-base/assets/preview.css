@@ -1,0 +1,215 @@
+:root {
+  color-scheme: light;
+  --bg: #eef2f7;
+  --surface: #ffffff;
+  --ink: #18212f;
+  --muted: #647184;
+  --line: #d8dee8;
+  --teal: #0f766e;
+  --red: #b91c1c;
+  --shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.preview-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.97);
+  padding: 10px 14px;
+}
+
+.preview-title-wrap {
+  min-width: 0;
+}
+
+h1 {
+  display: -webkit-box;
+  margin: 0 0 3px;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.preview-status {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.preview-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 750;
+  padding: 0 11px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.preview-button:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.icon-button {
+  width: 36px;
+  padding: 0;
+}
+
+.zoom-value {
+  min-width: 58px;
+}
+
+.preview-main {
+  padding: 18px;
+}
+
+.pdf-pages {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+}
+
+.pdf-page {
+  width: min(100%, 1100px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.page-label {
+  border-bottom: 1px solid var(--line);
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  padding: 7px 10px;
+}
+
+.canvas-wrap {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 10px;
+}
+
+.canvas-wrap canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: #fff;
+}
+
+.page-loading {
+  color: var(--muted);
+  padding: 32px 10px;
+}
+
+.preview-error {
+  max-width: 760px;
+  margin: 0 auto 16px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: var(--red);
+  line-height: 1.65;
+  padding: 12px 14px;
+}
+
+body.embedded {
+  background: #f8fafc;
+}
+
+body.embedded .preview-bar {
+  display: none;
+}
+
+body.embedded .preview-main {
+  padding: 10px;
+}
+
+body.embedded .pdf-pages {
+  gap: 12px;
+}
+
+body.embedded .pdf-page {
+  width: 100%;
+  box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .preview-bar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .preview-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .preview-main {
+    padding: 10px;
+  }
+
+  .pdf-pages {
+    gap: 10px;
+  }
+
+  .pdf-page {
+    border-radius: 6px;
+  }
+
+  .canvas-wrap {
+    padding: 6px;
+  }
+}

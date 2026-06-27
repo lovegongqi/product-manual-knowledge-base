@@ -93,6 +93,17 @@ function downloadFileUrl(fileUrl) {
   return `download/${value}`;
 }
 
+function previewFileUrl(manual, embedded = false) {
+  const params = new URLSearchParams({
+    file: manual.fileUrl || "",
+    title: manual.title || "说明书预览",
+    download: downloadFileUrl(manual.fileUrl),
+    filename: manual.filename || "",
+  });
+  if (embedded) params.set("embedded", "1");
+  return `preview.html?${params.toString()}`;
+}
+
 function optionHtml(value, label) {
   return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
 }
@@ -331,10 +342,11 @@ function renderList(results) {
       const active = manual.id === state.selectedId ? " is-active" : "";
       const models = (manual.models || []).slice(0, 4).join(" / ") || "未识别型号";
       const downloadUrl = downloadFileUrl(manual.fileUrl);
+      const previewUrl = previewFileUrl(manual);
       const packingButton = packingButtonHtml(manual, "manual-card-action packing-list-action");
       return `
         <article class="manual-card${active}">
-          <button class="manual-card-main" type="button" data-id="${escapeHtml(manual.id)}" data-file-url="${escapeHtml(manual.fileUrl)}">
+          <button class="manual-card-main" type="button" data-id="${escapeHtml(manual.id)}" data-preview-url="${escapeHtml(previewUrl)}">
             <img src="${escapeHtml(manual.thumbUrl)}" alt="" loading="lazy" onerror="this.src='assets/thumbs/placeholder.svg'" />
             <span class="manual-card-content">
               <span class="manual-title">${escapeHtml(manual.title)}</span>
@@ -347,7 +359,7 @@ function renderList(results) {
             </span>
           </button>
           <span class="manual-card-actions">
-            <a class="manual-card-action" href="${escapeHtml(manual.fileUrl)}" data-id="${escapeHtml(manual.id)}">打开PDF</a>
+            <a class="manual-card-action" href="${escapeHtml(previewUrl)}" data-id="${escapeHtml(manual.id)}">打开PDF</a>
             <a class="manual-card-action" href="${escapeHtml(downloadUrl)}" download="${escapeHtml(manual.filename)}" data-id="${escapeHtml(manual.id)}">下载PDF</a>
             ${packingButton}
           </span>
@@ -361,9 +373,9 @@ function renderList(results) {
       const selectedId = Number(button.dataset.id) || button.dataset.id;
       const manual = results.find((item) => String(item.id) === String(selectedId));
       state.selectedId = manual?.id ?? selectedId;
-      if (isMobileLayout() && button.dataset.fileUrl) {
+      if (isMobileLayout() && button.dataset.previewUrl) {
         saveReturnState();
-        window.location.assign(button.dataset.fileUrl);
+        window.location.assign(button.dataset.previewUrl);
         return;
       }
       state.mobileDetailOpen = isMobileLayout();
@@ -434,6 +446,8 @@ function renderDetail(results) {
 
   const models = (manual.models || []).join(" / ") || "未识别型号";
   const downloadUrl = downloadFileUrl(manual.fileUrl);
+  const previewUrl = previewFileUrl(manual);
+  const embeddedPreviewUrl = previewFileUrl(manual, true);
   const packingButton = packingButtonHtml(manual, "link-button packing-detail-action");
   els.manualDetail.innerHTML = `
     <article class="detail-card">
@@ -454,7 +468,7 @@ function renderDetail(results) {
             ${statusTag(manual)}
           </div>
           <div class="detail-actions">
-            <a class="primary-action" href="${escapeHtml(manual.fileUrl)}" target="_blank" rel="noreferrer">打开 PDF</a>
+            <a class="primary-action" href="${escapeHtml(previewUrl)}" target="_blank" rel="noreferrer">打开 PDF</a>
             <a class="link-button" href="${escapeHtml(downloadUrl)}" download="${escapeHtml(manual.filename)}">下载 PDF</a>
             ${packingButton}
           </div>
@@ -462,7 +476,7 @@ function renderDetail(results) {
       </header>
       <div class="detail-body">
         <div class="snippet">${matchingSnippet(manual)}</div>
-        <iframe class="pdf-frame" title="${escapeHtml(manual.title)}" src="${escapeHtml(manual.fileUrl)}"></iframe>
+        <iframe class="pdf-frame" title="${escapeHtml(manual.title)}" src="${escapeHtml(embeddedPreviewUrl)}"></iframe>
       </div>
     </article>
   `;

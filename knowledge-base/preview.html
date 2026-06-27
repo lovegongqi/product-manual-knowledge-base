@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>说明书预览</title>
+    <link rel="stylesheet" href="assets/preview.css?v=html-preview-20260627" />
+  </head>
+  <body>
+    <header class="preview-bar">
+      <button class="preview-button" id="backButton" type="button">返回</button>
+      <div class="preview-title-wrap">
+        <h1 id="previewTitle">说明书预览</h1>
+        <div class="preview-status" id="previewStatus">正在加载</div>
+      </div>
+      <div class="preview-actions">
+        <button class="preview-button icon-button" id="zoomOut" type="button" aria-label="缩小">-</button>
+        <button class="preview-button zoom-value" id="zoomValue" type="button">100%</button>
+        <button class="preview-button icon-button" id="zoomIn" type="button" aria-label="放大">+</button>
+        <a class="preview-button" id="sourceLink" href="#" target="_blank" rel="noreferrer">原文件</a>
+        <a class="preview-button" id="downloadLink" href="#" download>下载</a>
+      </div>
+    </header>
+
+    <main class="preview-main">
+      <div class="preview-error" id="previewError" hidden></div>
+      <div class="pdf-pages" id="pdfPages" aria-label="PDF 页面"></div>
+    </main>
+
+    <script type="module" src="assets/preview.js?v=html-preview-20260627"></script>
+  </body>
+</html>
