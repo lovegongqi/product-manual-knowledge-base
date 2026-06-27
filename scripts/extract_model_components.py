@@ -18,6 +18,7 @@ CSV_OUT = OUT_DIR / "model_components_accessories.csv"
 
 COMPONENT_KEYWORDS = [
     "产品组件",
+    "产品配件",
     "产品部件",
     "各部件",
     "组件名称",
@@ -27,7 +28,9 @@ ACCESSORY_KEYWORDS = [
     "装箱清单如下",
     "装箱清单",
     "包装清单",
+    "随箱附件",
     "本产品的所有组件都包含",
+    "产品配件",
     "纸箱内还包括",
     "包装箱内",
     "彩盒内",
@@ -41,6 +44,8 @@ STOP_KEYWORDS = [
     "三．产品功能",
     "产品功能",
     "产品特点",
+    "产品尺寸图",
+    "产品尺寸",
     "技术参数",
     "结构示意图",
     "电气原理图",
@@ -124,6 +129,8 @@ def split_numbered_items(snippet: str) -> list[str]:
     text = re.sub(r"[\(（]\s*([0-9]{1,2})\s*[\)）]", r" @@ITEM@@\1. ", text)
     text = re.sub(r"(?<![A-Za-z0-9])([0-9]{1,2})[\.、]\s+", r" @@ITEM@@\1. ", text)
     parts = [part for part in text.split("@@ITEM@@") if part.strip()]
+    if len(parts) > 1 and not re.match(r"^\s*[0-9]{1,2}[\.、]", parts[0]):
+        parts = parts[1:]
     if len(parts) <= 1:
         return []
     return parts
@@ -152,6 +159,39 @@ def open_box_items(snippet: str) -> list[str]:
         items.append("零件包")
     if "附件" in text and not items:
         items.append("附件完整性检查")
+    return items
+
+
+def table_name_items(snippet: str) -> list[str]:
+    text = clean_space(snippet)
+    match = re.search(
+        r"(?:配件名称|名称)\s+(.{10,900}?)\s+(?:数量|效量|数呈|单位|备注|技术参数|产品参数)",
+        text,
+    )
+    if not match:
+        match = re.search(r"(?:配件名称|名称)\s+(.{10,700})$", text)
+        if not match or not re.search(r"随箱|装箱|包装|序号|产品配件", text[:180]):
+            return []
+
+    part = match.group(1)
+    for stop in ("产品尺寸图", "产品尺寸", "尺寸图", "技术参数", "产品参数"):
+        idx = part.find(stop)
+        if idx > 10:
+            part = part[:idx]
+            break
+
+    items: list[str] = []
+    for token in re.split(r"\s{1,}|、|/|，|；|;", part):
+        item = normalize_item(token)
+        if len(item) < 2:
+            continue
+        if re.fullmatch(r"[0-9一二三四五六七八九十]{1,3}", item):
+            continue
+        if re.fullmatch(r"[0-9.×xX*+-]+(?:mm|CM|cm)?", item):
+            continue
+        if item in {"序号", "名称", "配件名称", "数量", "单位", "备注"}:
+            continue
+        items.append(item)
     return items
 
 
@@ -239,6 +279,9 @@ def extract_list(snippet: str) -> str:
     opened_items = open_box_items(snippet)
     if opened_items:
         return compact_items(opened_items)
+    table_items = table_name_items(snippet)
+    if table_items:
+        return compact_items(table_items)
     numbered = split_numbered_items(snippet)
     if numbered:
         return compact_items(numbered)

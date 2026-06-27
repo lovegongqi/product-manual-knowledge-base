@@ -18,6 +18,7 @@ from pypdf import PdfReader
 from extract_model_components import (
     ACCESSORY_KEYWORDS,
     COMPONENT_KEYWORDS,
+    STOP_KEYWORDS,
     extract_list,
     find_section,
     models_from_filename,
@@ -429,6 +430,9 @@ def render_screenshot(
     png_path = out_prefix.with_suffix(".png")
     rel_path = f"assets/packing/{png_path.name}"
 
+    if png_path.exists():
+        return rel_path
+
     if existing_image:
         try:
             shutil.copyfile(existing_image, png_path)
@@ -460,8 +464,7 @@ def render_screenshot(
     return rel_path if png_path.exists() else ""
 
 
-def manual_sections(manual: dict) -> dict:
-    text = manual.get("text") or ""
+def sections_from_text(text: str) -> dict:
     component_snippet, component_keyword, component_status = find_section(
         text, COMPONENT_KEYWORDS, prefer_list=False
     )
@@ -501,6 +504,52 @@ def manual_sections(manual: dict) -> dict:
     }
 
 
+def manual_sections(manual: dict) -> dict:
+    return sections_from_text(manual.get("text") or "")
+
+
+def weak_extracted_list(value: str) -> bool:
+    lines = [line.strip() for line in (value or "").splitlines() if line.strip()]
+    if not lines or len(lines) > 8:
+        return False
+    normalized = " ".join(lines)
+    toc_terms = [*STOP_KEYWORDS, "功能示意图", "滤芯名称", "目录"]
+    stop_hits = sum(1 for keyword in toc_terms if keyword in normalized)
+    if "功能示意图" in normalized and "滤芯名称" in normalized:
+        return True
+    item_hits = sum(
+        1
+        for keyword in ("主机", "滤芯", "水龙头", "说明书", "用户手册", "配件", "接头", "PE管")
+        if keyword in normalized
+    )
+    return stop_hits >= 2 and item_hits == 0
+
+
+def merge_sections(primary: dict, fallback: dict) -> dict:
+    merged = dict(primary)
+    for field in ("components", "accessories", "sourceText"):
+        if fallback.get(field) and (
+            not merged.get(field)
+            or (field != "sourceText" and weak_extracted_list(merged.get(field, "")))
+        ):
+            merged[field] = fallback[field]
+
+    for prefix in ("component", "accessory"):
+        status_field = f"{prefix}Status"
+        keyword_field = f"{prefix}Keyword"
+        if merged.get(status_field) == "not_found" and fallback.get(status_field) != "not_found":
+            merged[status_field] = fallback.get(status_field, merged.get(status_field))
+            merged[keyword_field] = fallback.get(keyword_field, merged.get(keyword_field))
+
+    if merged.get("status") == "not_found" and fallback.get("status") != "not_found":
+        merged["status"] = fallback["status"]
+    if not merged.get("keyword") and fallback.get("keyword"):
+        merged["keyword"] = fallback["keyword"]
+    if primary.get("sourceText") and fallback.get("sourceText") and fallback["sourceText"] not in primary["sourceText"]:
+        merged["sourceText"] = f"{primary['sourceText']}\n\nOCR来源：{fallback['sourceText']}"
+    return merged
+
+
 def build_payload() -> dict:
     pdftoppm = bundled_tool("pdftoppm")
     ocr_tool = compile_ocr_tool()
@@ -517,9 +566,13 @@ def build_payload() -> dict:
         sections = manual_sections(manual)
 
         page_candidate = best_page(extract_page_texts(pdf_path, PAGE_SCAN_LIMIT))
-        if not page_candidate and sections["status"] == "found":
+        if not page_candidate:
             page_candidate = best_page(
                 ocr_front_pages(pdf_path, pdftoppm, ocr_tool, OCR_SCAN_LIMIT)
+            )
+        if page_candidate:
+            sections = merge_sections(
+                sections, sections_from_text(page_candidate.get("text") or "")
             )
 
         image_url = ""
@@ -568,7 +621,8 @@ def build_payload() -> dict:
         print(
             f"[{index:03d}/{len(processed_manuals)}] {manual.get('id')} "
             f"{status} page={page_number or '-'} types={'/'.join(packing[str(manual.get('id'))]['machineTypes']) or '-'} "
-            f"keyword={packing[str(manual.get('id'))]['keyword'] or '-'}"
+            f"keyword={packing[str(manual.get('id'))]['keyword'] or '-'}",
+            flush=True,
         )
 
     build = {
