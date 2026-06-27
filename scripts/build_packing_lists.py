@@ -19,6 +19,7 @@ from extract_model_components import (
     ACCESSORY_KEYWORDS,
     COMPONENT_KEYWORDS,
     STOP_KEYWORDS,
+    clean_ocr_artifacts,
     extract_list,
     find_section,
     models_from_filename,
@@ -211,7 +212,7 @@ def clean_text(value: str) -> str:
     value = (value or "").replace("\u3000", " ")
     value = re.sub(r"[ \t\r\f\v]+", " ", value)
     value = re.sub(r"\n{3,}", "\n\n", value)
-    return value.strip()
+    return clean_ocr_artifacts(value)
 
 
 def compact_source(value: str, max_len: int = 900) -> str:

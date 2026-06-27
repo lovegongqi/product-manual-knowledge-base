@@ -79,6 +79,19 @@ NOISE_PATTERNS = [
     r"^[×xX]\s*\d+\s*$",
     r"^\d+\s*(台|个|只|支|根|本|张|套|件|米)\s*$",
 ]
+OCR_TEXT_REPLACEMENTS = [
+    ("增医菜", ""),
+    ('"0D', '"OD'),
+    ("1/4°L", '1/4"L'),
+    ("1/2°L", '1/2"L'),
+    ("3/8°L", '3/8"L'),
+]
+
+
+def clean_ocr_artifacts(value: str) -> str:
+    for before, after in OCR_TEXT_REPLACEMENTS:
+        value = value.replace(before, after)
+    return re.sub(r"\s{2,}", " ", value).strip()
 
 
 def load_manuals() -> list[dict]:
@@ -93,7 +106,7 @@ def clean_space(value: str) -> str:
     value = (value or "").replace("\u3000", " ")
     value = re.sub(r"[ \t\r\f\v]+", " ", value)
     value = re.sub(r"\n+", " ", value)
-    return value.strip()
+    return clean_ocr_artifacts(value)
 
 
 def normalize_item(value: str) -> str:
