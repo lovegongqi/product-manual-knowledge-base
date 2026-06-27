@@ -148,12 +148,15 @@ async function loadPdf() {
 
   try {
     const loadingTask = pdfjsLib.getDocument({ url: fileUrl });
+    let loadDone = false;
     loadingTask.onProgress = (progress) => {
+      if (loadDone) return;
       if (!progress.total) return;
       const percent = Math.round((progress.loaded / progress.total) * 100);
       els.status.textContent = `正在加载 ${percent}%`;
     };
     pdfDoc = await loadingTask.promise;
+    loadDone = true;
     els.status.textContent = `${pdfDoc.numPages} 页`;
     els.pages.innerHTML = Array.from({ length: pdfDoc.numPages }, (_, index) => {
       const pageNumber = index + 1;
