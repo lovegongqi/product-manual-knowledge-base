@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "product-manual-knowledge-base",
+  "compatibility_date": "2026-08-07",
+  "observability": { "enabled": true },
+  "compatibility_flags": ["nodejs_compat"],
+  "build": {
+    "command": "node scripts/prepare-deploy.mjs"
+  },
+  "assets": {
+    "directory": "./public"
+  }
+}
