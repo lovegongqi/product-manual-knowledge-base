@@ -1,16 +1,16 @@
 # 产品说明书知识库
 
-这是一个静态离线产品知识库，包含 151 份 PDF 说明书、83 份水批报告 PDF 和已生成好的网页数据。
+这是一个静态离线产品知识库，包含 151 份 PDF 说明书、86 份水批报告、10 份认证证书、52 份水效报告、90 份检测/检验报告和已生成好的网页数据。
 
 ## 目录
 
-- `index.html`: 知识库主页，可跳转到产品说明书和水批报告。
+- `index.html`: 知识库主页，可跳转到产品说明书和产品认证资料。
 - `knowledge-base/`: 产品说明书静态网页入口和前端资源。
 - `knowledge-base/index.html`: 网页入口。
 - `knowledge-base/assets/manuals-data.js`: 已抽取并 OCR 后的全文索引数据。
 - `knowledge-base/assets/thumbs/`: PDF 首页缩略图。
-- `water-approvals/`: 水批报告静态网页、PDF 文件和缩略图。
-- `water-approvals/index.html`: 水批报告网页入口。
+- `water-approvals/`: 产品认证资料静态网页、PDF 文件和缩略图（保留原 URL 以兼容旧链接）。
+- `water-approvals/index.html`: 产品认证资料网页入口。
 - `*.pdf`: 原始说明书文件。网页的“打开 PDF”和“下载 PDF”链接依赖这些文件位于仓库根目录。
 - `outputs/model_components_accessories/`: 每个型号的产品组件和开箱配件清单。
 - `scripts/`: 生成知识库和配件清单的脚本。

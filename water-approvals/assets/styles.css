@@ -137,6 +137,33 @@ h1 {
   margin: 0 auto;
 }
 
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 12px;
+}
+
+.filter-button span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.filter-button:hover,
+.filter-button.is-active {
+  border-color: var(--teal);
+  background: #ecfdf5;
+  color: var(--teal);
+}
+
 .search-field {
   display: grid;
   gap: 6px;

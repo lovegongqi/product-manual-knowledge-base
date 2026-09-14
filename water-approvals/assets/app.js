@@ -5,6 +5,7 @@
     resultTotal: document.getElementById("resultTotal"),
     searchInput: document.getElementById("searchInput"),
     clearSearch: document.getElementById("clearSearch"),
+    categoryFilters: document.getElementById("categoryFilters"),
     reportList: document.getElementById("reportList"),
     reportDetail: document.getElementById("reportDetail"),
     detailPane: document.querySelector(".detail-pane"),
@@ -17,6 +18,7 @@
 
   const state = {
     query: "",
+    category: "全部",
     selectedId: reports[0]?.id ?? null,
     mobileDetailOpen: false,
   };
@@ -48,7 +50,7 @@
     const fileUrl = `../water-approvals/${report.fileUrl || ""}`;
     const params = new URLSearchParams({
       file: fileUrl,
-      title: report.title || "水批报告预览",
+      title: report.title || "认证资料预览",
       download: `../water-approvals/${report.downloadUrl || report.fileUrl || ""}`,
       filename: report.filename || "",
     });
@@ -90,6 +92,7 @@
   function filteredReports() {
     const terms = state.query.trim().split(/\s+/).filter(Boolean);
     return reports
+      .filter((report) => state.category === "全部" || report.category === state.category)
       .map((report) => {
         const score = scoreReport(report, terms);
         if (score === null) return null;
@@ -119,7 +122,7 @@
       report.contentNum ? `编号：${report.contentNum}` : "",
       report.latestShowDate ? `发布日期：${report.latestShowDate}` : "",
     ].filter(Boolean);
-    return parts.join(" · ") || "水批报告已纳入本地静态网页。";
+    return parts.join(" · ") || "认证资料已纳入本地静态网页。";
   }
 
   function isMobileLayout() {
@@ -140,8 +143,8 @@
     els.resultTotal.textContent = `${results.length} 份`;
 
     if (!results.length) {
-      els.reportList.innerHTML = `<div class="empty-list">没有匹配的水批报告</div>`;
-      els.reportDetail.innerHTML = `<div class="detail-empty">没有匹配的水批报告</div>`;
+      els.reportList.innerHTML = `<div class="empty-list">没有匹配的认证资料</div>`;
+      els.reportDetail.innerHTML = `<div class="detail-empty">没有匹配的认证资料</div>`;
       state.mobileDetailOpen = false;
       syncMobileDetailState();
       return;
@@ -205,7 +208,7 @@
       <article class="detail-card">
         <div class="mobile-pdf-bar">
           <span class="mobile-pdf-title">${escapeHtml(report.title)}</span>
-          <button class="mobile-back" type="button" aria-label="返回水批报告列表">返回列表</button>
+          <button class="mobile-back" type="button" aria-label="返回认证资料列表">返回列表</button>
         </div>
         <header class="detail-header">
           <img src="${escapeHtml(thumb)}" alt="" onerror="this.src='assets/thumbs/placeholder.svg'" />
@@ -232,12 +235,41 @@
   }
 
   function renderSummary() {
-    els.buildSummary.textContent = `${reports.length} 份水批 PDF，离线静态网页`;
+    const categoryCounts = reports.reduce((counts, report) => {
+      counts[report.category] = (counts[report.category] || 0) + 1;
+      return counts;
+    }, {});
+    const details = ["水批报告", "认证证书", "水效报告", "检测报告"]
+      .filter((category) => categoryCounts[category])
+      .map((category) => `${category.replace("报告", "")}${categoryCounts[category]} 份`)
+      .join("·");
+    els.buildSummary.textContent = `${reports.length} 份 PDF${details ? `（${details}）` : ""}`;
+  }
+
+  function renderCategoryFilters() {
+    const categories = ["全部", "水批报告", "认证证书", "水效报告", "检测报告"].filter(
+      (category) => category === "全部" || reports.some((report) => report.category === category),
+    );
+    els.categoryFilters.innerHTML = categories
+      .map((category) => {
+        const active = category === state.category;
+        const count = category === "全部" ? reports.length : reports.filter((report) => report.category === category).length;
+        return `<button class="filter-button${active ? " is-active" : ""}" type="button" data-category="${escapeHtml(category)}" aria-pressed="${active}">${escapeHtml(category)} <span>${count}</span></button>`;
+      })
+      .join("");
+    els.categoryFilters.querySelectorAll(".filter-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.category = button.dataset.category || "全部";
+        state.mobileDetailOpen = false;
+        render();
+      });
+    });
   }
 
   function render() {
     const results = filteredReports();
     renderSummary();
+    renderCategoryFilters();
     renderList(results);
     renderDetail(results);
     syncMobileDetailState();
