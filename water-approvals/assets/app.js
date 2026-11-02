@@ -239,7 +239,7 @@
       counts[report.category] = (counts[report.category] || 0) + 1;
       return counts;
     }, {});
-    const details = ["水批报告", "认证证书", "水效报告", "检测报告"]
+    const details = ["水批报告", "认证证书", "水效报告", "检测报告", "报关单"]
       .filter((category) => categoryCounts[category])
       .map((category) => `${category.replace("报告", "")}${categoryCounts[category]} 份`)
       .join("·");
@@ -247,7 +247,7 @@
   }
 
   function renderCategoryFilters() {
-    const categories = ["全部", "水批报告", "认证证书", "水效报告", "检测报告"].filter(
+    const categories = ["全部", "水批报告", "认证证书", "水效报告", "检测报告", "报关单"].filter(
       (category) => category === "全部" || reports.some((report) => report.category === category),
     );
     els.categoryFilters.innerHTML = categories

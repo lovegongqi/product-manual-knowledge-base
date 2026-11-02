@@ -307,6 +307,11 @@ def build(certificate: str, out_dir: Path, workers: int) -> list[dict]:
             print(f"[{i:02d}/{len(tasks)}] {item['title']} -> {item['filename']}")
     order = {str(record["id"]): i for i, record in enumerate(reports)}
     enriched.sort(key=lambda item: order.get(item["id"], 10_000))
+    # Customs imports include image-based records that this document fetch does not cover.
+    existing_data = out_dir / "assets" / "reports-data.js"
+    if existing_data.exists():
+        existing = json.loads(existing_data.read_text().removeprefix("window.WATER_APPROVALS = ").strip().removesuffix(";"))
+        enriched.extend(item for item in existing if item.get("category") == "报关单")
     cleanup_generated_files(pdf_dir, thumbs_dir, enriched)
     write_data_js(enriched, out_dir / "assets" / "reports-data.js")
     return enriched
